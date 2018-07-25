@@ -7,6 +7,7 @@ def check_number_error(num):
         raise AssertionError(
             'type {:s} is not numeric value'.format(type(num)))
 
+
 def check_bool_error(b):
     if not isinstance(b, bool):
         raise AssertionError(

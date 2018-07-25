@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 solid - 3D primitives and transformations
 """
@@ -14,14 +13,82 @@ class Solid(object):
     def __init__(self):
         super(Solid, self).__init__()
 
+        self._str_render = None
+
+    # self.root=False            # root=!
+    # self.disable=False         # disable=*
+    # self.background=False      # backgroun=%
+    # self.debug=False           # debug=#
+
+    def rotate(self):
+        return "rotate(45)"
+
     def _render(self):
         return NotImplementedError
 
+    # def __sub__(self, other):
+    #     """Diference of solids"""
+    #     return NotImplementedError
+
+    # def __add__(self, other):
+    #     """Union of solids"""
+    #     return NotImplementedError
+
+    # def __mul__(self, other):
+    #     """Intersection of solids"""
+    #     return NotImplementedError
+
     def __str__(self):
-        return self._render() + ";"
+        self._render()
+        return self._str_render
 
     def __repr__(self):
         return repr(self.__str__)
+
+
+class Group(Solid):
+    """Group solids."""
+
+    def __init__(self, *args):
+        super(Group, self).__init__()
+        self._solids = args
+        self._str_render = None
+
+    def __grouped(self):
+        if all(isinstance(s, Solid) for s in self._solids):
+            self._str_render = "{ " + " ".join(self._solids) + " }"
+        else:
+            raise AssertionError("Group, accepts Solids only.")
+
+
+class Union(Group):
+    """Union creates a union of all its child nodes."""
+
+    def __init__(self, arg):
+        super(Union, self).__init__()
+        self.arg = arg
+
+
+class Diference(Group):
+    """
+    Diference subtracts the 2nd (and all further)
+    child nodes from the first one.
+    """
+
+    def __init__(self, arg):
+        super(Diference, self).__init__()
+        self.arg = arg
+
+
+class Intersection(Group):
+    """
+    Diference creates the intersection of all child nodes.
+    This keeps the overlapping portion
+    """
+
+    def __init__(self, arg):
+        super(Intersection, self).__init__()
+        self.arg = arg
 
 
 class Cube(Solid):
@@ -41,8 +108,8 @@ class Cube(Solid):
 
 
     **Default**
-    >> print(Cube())
-    Cube(size=[1,1,1], center=False)
+    >>> print(Cube())
+    cube(size=[1,1,1], center=false);
 
     """
 
@@ -73,10 +140,11 @@ class Cube(Solid):
         self._center = center
 
     def _render(self):
-        return 'cube(size={:s}, center={:s})'.format(
-            str(self.size),
-            str(self.center).lower(),
+        self._str_render = 'cube(size={size:s}, center={center:s});'.format(
+            size=str(self.size).replace(" ", ""),
+            center=str(self.center).lower(),
         )
+
 
 class Sphere(Solid):
     """Sphere 3D Primitive.
@@ -92,9 +160,8 @@ class Sphere(Solid):
 
 
     **Default**
-    >> print(Sphere())
-    sphere($fn=0, $fa=12, $fs=2, d=2)
-
+    >>> print(Sphere())
+    sphere($fn=0, $fa=12, $fs=2, d=2);
     """
 
     def __init__(self, d=2, fa=12, fn=0, fs=2):
@@ -141,10 +208,9 @@ class Sphere(Solid):
         self._fs = fs
 
     def _render(self):
-        return 'sphere($fn={:g}, $fa={:g}, $fs={:g}, d={:g})'.format(
-            self.fn, self.fa, self.fs,
-            self.d,
-        )
+        self._str_render = (
+            "sphere($fn={self.fn:g}, $fa={self.fa:g}, "
+            "$fs={self.fs:g}, d={self.d:g});").format(self=self)
 
 # cylinder(h,r|d,center)
 # cylinder(h,r1|d1,r2|d2,center)
@@ -167,20 +233,21 @@ def main():
 
     # Cube(5)
     # Square(5,10).rotate(40)
-    # GroupSolids(Circle(5), Square(4)).translate([10,5])
-    # GroupSolids(
+    # Group(Circle(5), Square(4)).translate([10,5])
+    # Group(
     #     Sphere(5).translate([5,3,0]),
-    #     GroupSolids(
+    #     Group(
     #         Cylinder(10),
     #         Cube([5,6,7]),
     #     ).rotate([45,0,45])
     # ).color("blue")
-
-    print(Cube(100))
-    print(Cube([10, 50, 30], True))
-    cube = Cube([10, 50, 30], True)
-    print(cube.size)
+    # Union()
+    # Diference()
+    # Intersection()
+    import doctest
+    doctest.testmod()
 
 
 if __name__ == '__main__':
+
     main()
