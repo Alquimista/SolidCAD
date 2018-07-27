@@ -15,35 +15,30 @@ class Solid(object):
 
         self._str_render = None
 
-    # self.root=False            # root=!
-    # self.disable=False         # disable=*
-    # self.background=False      # backgroun=%
-    # self.debug=False           # debug=#
+        # self.root=False            # root=!
+        # self.disable=False         # disable=*
+        # self.background=False      # backgroun=%
+        # self.debug=False           # debug=#
 
-    def rotate(self):
-        return "rotate(45)"
+    def _transform(self, t):
+        self._str_render = t + " " + self._str_render 
+        
 
-    def _render(self):
-        return NotImplementedError
 
-    # def __sub__(self, other):
-    #     """Diference of solids"""
-    #     return NotImplementedError
+    def rotate(self, a):
+        if not isinstance(a, (list, tuple)):
+            angle = a % 360
+        else:
+            angle = a
+        rotate_str = "rotate(a={:s})".format(str(angle).replace(" ", ""))
+        return self._transform(rotate_str)
 
-    # def __add__(self, other):
-    #     """Union of solids"""
-    #     return NotImplementedError
-
-    # def __mul__(self, other):
-    #     """Intersection of solids"""
-    #     return NotImplementedError
 
     def __str__(self):
-        self._render()
         return self._str_render
 
     def __repr__(self):
-        return repr(self.__str__)
+        return repr(self._str_render)
 
 
 class Group(Solid):
@@ -54,9 +49,12 @@ class Group(Solid):
         self._solids = args
         self._str_render = None
 
-    def __grouped(self):
+        self._grouped()
+
+    def _grouped(self):
         if all(isinstance(s, Solid) for s in self._solids):
-            self._str_render = "{ " + " ".join(self._solids) + " }"
+            solids = list(map(str, self._solids))
+            self._str_render = "{\n    " + "\n    ".join(solids) + "\n}"
         else:
             raise AssertionError("Group, accepts Solids only.")
 
@@ -64,9 +62,16 @@ class Group(Solid):
 class Union(Group):
     """Union creates a union of all its child nodes."""
 
-    def __init__(self, arg):
+    def __init__(self, *args):
         super(Union, self).__init__()
-        self.arg = arg
+        self._solids = args
+
+        self._union()
+
+    def _union(self):
+        self._grouped()
+        self._str_render = "union() {:s}".format(self._str_render)
+        return self
 
 
 class Diference(Group):
@@ -75,9 +80,16 @@ class Diference(Group):
     child nodes from the first one.
     """
 
-    def __init__(self, arg):
+    def __init__(self, *args):
         super(Diference, self).__init__()
-        self.arg = arg
+        self._solids = args
+
+        self._diference()
+
+    def _diference(self):
+        self._grouped()
+        self._str_render = "diference() {:s}".format(self._str_render)
+        return self
 
 
 class Intersection(Group):
@@ -86,9 +98,16 @@ class Intersection(Group):
     This keeps the overlapping portion
     """
 
-    def __init__(self, arg):
+    def __init__(self, *args):
         super(Intersection, self).__init__()
-        self.arg = arg
+        self._solids = args
+
+        self._intersection()
+
+    def _intersection(self):
+        self._grouped()
+        self._str_render = "intersection() {:s}".format(self._str_render)
+        return self
 
 
 class Cube(Solid):
@@ -98,7 +117,7 @@ class Cube(Solid):
     Cube(size=x ,center=True/False)
     Cube()
 
-    :size:
+    :size:                                         [Defautl=[0,0,0]]
     single value, cube with all sides this length
     3 value array [x,y,z], cube with dimensions x, y and z.
 
@@ -118,6 +137,8 @@ class Cube(Solid):
         self._size = size  # size=[x,y,z]
         self._center = center
 
+        self._str_render = self._render()
+
     @property
     def size(self):
         if not isinstance(self._size, (list, tuple)):
@@ -128,7 +149,9 @@ class Cube(Solid):
     def size(self, size):
         if not isinstance(size, (list, tuple)):
             self._size = [size, size, size]
-        self._size = list(size)
+        else:
+            self._size = list(size)
+        self._str_render = self._render()
 
     @property
     def center(self):
@@ -138,9 +161,10 @@ class Cube(Solid):
     def center(self, center):
         utils.check_bool_error(center)
         self._center = center
+        self._str_render = self._render()
 
     def _render(self):
-        self._str_render = 'cube(size={size:s}, center={center:s});'.format(
+        return 'cube(size={size:s}, center={center:s});'.format(
             size=str(self.size).replace(" ", ""),
             center=str(self.center).lower(),
         )
@@ -167,9 +191,12 @@ class Sphere(Solid):
     def __init__(self, d=2, fa=12, fn=0, fs=2):
         super(Sphere, self).__init__()
         self._d = d
+        # TODO: CHECK IF IS ARE VALID VALUE FS, FS, FN
         self._fa = fa
         self._fs = fs
         self._fn = fn
+
+        self._str_render = self._render()
 
     @property
     def d(self):
@@ -208,12 +235,119 @@ class Sphere(Solid):
         self._fs = fs
 
     def _render(self):
-        self._str_render = (
+        return (
             "sphere($fn={self.fn:g}, $fa={self.fa:g}, "
             "$fs={self.fs:g}, d={self.d:g});").format(self=self)
 
-# cylinder(h,r|d,center)
-# cylinder(h,r1|d1,r2|d2,center)
+
+#TODO: TEST
+class Cylinder(Solid):
+    """Sphere 3D Primitive.
+
+    cylinder(h,d1,d2,center,fn, fa, fs)
+    cylinder()
+
+    :h: height of the cylinder or cone      [Default=1]
+    :d1: diameter, bottom of cone           [Default=2]
+    :d2: diameter, top of cone              [Default=2]
+
+    :center:
+        false (default), z ranges from 0 to h
+        true, z ranges from -h/2 to +h/2
+    $fa : minimum angle (in degrees) of each fragment.         [Default=12]
+    $fs : minimum circumferential length of each fragment.     [Default=2]
+    $fn : fixed number of fragments in 360 degrees.            [Default=0]
+
+
+    **Default**
+    >>> print(Cylinder())
+    cylinder($fn=0, $fa=12, $fs=2, h=1, d1=2, d2=2, center=false);
+    """
+
+    def __init__(self, h=1, d1=2, d2=2, center=False, fa=12, fn=0, fs=2):
+        super(Cylinder, self).__init__()
+        self._h = h
+        self._d1 = d1
+        self._d2 = d2
+        self._center = center
+        # TODO: CHECK IF IS ARE VALID VALUE FS, FS, FN
+        self._fa = fa
+        self._fs = fs
+        self._fn = fn
+
+        self._str_render = self._render()
+
+    @property
+    def h(self):
+        return self._h
+
+    @h.setter
+    def h(self, h):
+        utils.check_number_error(h)
+        self._h = h
+
+    @property
+    def d1(self):
+        return self._d1
+
+    @d1.setter
+    def d1(self, d1):
+        utils.check_number_error(d1)
+        self._d = d1
+
+    @property
+    def d2(self):
+        return self._d2
+
+    @d2.setter
+    def d2(self, d2):
+        utils.check_number_error(d2)
+        self._d2 = d2
+
+    @property
+    def center(self):
+        return self._center
+
+    @center.setter
+    def center(self, center):
+        utils.check_bool_error(center)
+        self._center = center
+        self._str_render = self._render()
+
+    @property
+    def fa(self):
+        return self._fa
+
+    @fa.setter
+    def fa(self, fa):
+        utils.check_number_error(fa)
+        self._fa = fa
+
+    @property
+    def fn(self):
+        return self._fn
+
+    @fn.setter
+    def fn(self, fn):
+        utils.check_number_error(fn)
+        self._fn = fn
+
+    @property
+    def fs(self):
+        return self._fs
+
+    @fs.setter
+    def fs(self, fs):
+        utils.check_number_error(fs)
+        self._fs = fs
+
+    def _render(self):
+        return (
+            "cylinder($fn={self.fn:g}, $fa={self.fa:g}, "
+            "$fs={self.fs:g}, h={self.h:g}, d1={self.d1:g},d1={self.d2:g}"
+            "center={center:s});").format(self=self,
+                                          center=str(self.center).lower())
+
 # polyhedron(points, triangles, convexity)
 
 
@@ -244,6 +378,7 @@ def main():
     # Union()
     # Diference()
     # Intersection()
+
     import doctest
     doctest.testmod()
 

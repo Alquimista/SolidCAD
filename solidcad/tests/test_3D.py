@@ -31,10 +31,16 @@ class TestCube(TestCase):
             str(solidcad.Cube(center=True, size=18)))
         self.assertEqual(
             str(solidcad.Cube(18, True)),
-            str(solidcad.Cube(center=True, size=[18,18,18])))
+            str(solidcad.Cube(center=True, size=[18, 18, 18])))
         self.assertNotEqual(
             str(solidcad.Cube(18, True)),
-            str(solidcad.Cube(center=True, size=[18,15,18])))
+            str(solidcad.Cube(center=True, size=[18, 15, 18])))
+
+    def test_valuer(self):
+        c = solidcad.Cube()
+        c.size = [25, 12, 15]
+        self.assertEqual(str(c), "cube(size=[25,12,15], center=false);")
+
 
 class TestSphere(TestCase):
     def test_is_solid_object(self):
@@ -55,4 +61,3 @@ class TestSphere(TestCase):
         self.assertEqual(
             str(solidcad.Sphere(8, fa=15)),
             str(solidcad.Sphere(d=8, fa=15)))
- 
