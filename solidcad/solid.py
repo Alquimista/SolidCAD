@@ -7,6 +7,7 @@ solid - 3D primitives and transformations
 from solidcad import utils
 
 
+#TODO: REFACTOR CHECK VALUES
 class Solid(object):
     """Solid Base 3D Primitive"""
 
@@ -26,13 +27,97 @@ class Solid(object):
 
 
     def rotate(self, a):
+        """
+        rotate. Rotates its child 'a' degrees about the axis
+        of the coordinate system
+
+        Rotate with a single scalar argument rotates around the Z axis.
+        This is useful in 2D contexts where that is the only axis for rotation. 
+
+        .rotate(a=[x,y,z])
+        .rotate(a=z)
+
+        :a:                                         
+        Angle in degrees
+        """
+        #TODO: unittest
         if not isinstance(a, (list, tuple)):
             angle = a % 360
         else:
-            angle = a
+            if not all(isinstance(_, (int, float)) for _ in a) and (len(a) != 3):
+                raise AssertionError('vector v is have a not numeric value')
+            angle=a
         rotate_str = "rotate(a={:s})".format(str(angle).replace(" ", ""))
         return self._transform(rotate_str)
 
+    def translate(self, v):
+        """
+        translate. Translates (moves) its child elements along the
+        specified vector. 
+
+        .translate(v=[x,y,z])
+
+        :v:                                         
+        Position vector
+        """
+        #TODO: unittest
+        if not all(isinstance(_, (int, float)) for _ in v) and (len(v) != 3):
+            raise AssertionError('vector v is have a not numeric value')
+        move_str = "translate(v={:s})".format(str(v))
+        return self._transform(move_str)
+
+    def scale(self, v):
+        """
+        scale. Scales its child elements using the specified vector.
+
+        .scale(v=[x,y,z])
+
+        :v:                                         
+        Scale vector
+        """
+        #TODO: unittest
+        if not all(isinstance(_, (int, float)) for _ in v) and (len(v) != 3):
+            raise AssertionError('vector v is have a not numeric value')
+        scale_str = "scale(v={:s})".format(str(v))
+        return self._transform(scale_str)
+
+    def mirror(self, v):
+        """
+        mirror. Mirrors the child element on a plane through the origin.
+
+        .mirror(v=[x,y,z])
+
+        :v:                                         
+        Mirror vector
+        """
+        #TODO: unittest
+        if not all(isinstance(_, (int, float)) for _ in v) and (len(v) != 3):
+            raise AssertionError('vector v is have a not numeric value')
+        mirror_str = "mirror(v={:s})".format(str(v))
+        return self._transform(mirror_str)
+
+    def resize(self, v, auto=false):
+        """
+        resize. Modifies the size of the child object to match the given
+        x,y, and z.
+
+        .resize(v=[x,y,z])
+
+        :v:                                         
+        Resize vector
+
+        :auto:
+        Boolean or boolean vector
+        """
+        #TODO: unittest
+        if isinstance(a, (list, tuple)):
+            if not all(isinstance(_, bool) for _ in auto) and (len(auto) != 3):
+                raise AssertionError('vector v is have a not numeric value')
+        if not all(isinstance(_, (int, float)) for _ in v) and (len(v) != 3):
+            raise AssertionError('vector v is have a not numeric value')
+        resize_srt = "resize(v={:s}, auto={:s})".format(
+            str(v), str(auto).replace(" ", ""))
+        return self._transform(resize_srt)
 
     def __str__(self):
         return self._str_render
